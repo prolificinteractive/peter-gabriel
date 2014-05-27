@@ -47,9 +47,12 @@ function bumpCommand (parser) {
 				help: 'Replaces the contents of the .plist file instead of writing to stdout.'
 			},
 			'version-only': {
-				abbr: 'v',
 				flag: true,
 				help: 'Returns just the version string.'
+			},
+			'build-only': {
+				flag: true,
+				help: 'Returns just the build number.'
 			}
 		})
 
@@ -59,25 +62,32 @@ function bumpCommand (parser) {
 
 			if (options['version-only']) {
 				var newVersion = toVersionString(bumpParsedVersion(parseVersion(plist), options));
-				console.log(newVersion);
+				process.stdout.write(newVersion);
+			} else if (options['build-only']) {
+				var newBuild = bumpParsedVersion(parseVersion(plist), options)[3];
+				process.stdout.write(newBuild.toString());
 			} else if (options.replace) {
 				fs.writeFileSync(file, replaceVersion(plist, options));
 			} else {
-				console.log(replaceVersion(plist, options));
+				process.stdout.write(replaceVersion(plist, options));
 			}
 		});
 };
 
 function parseVersion (plist) {
-	var match = plist.match(SHORT_PATTERN);
-	if (!match) throw new Error('could not find CFBundleVersion plist entry');
-	return match[2].split(/[.-]/);
+	var versionMatch = plist.match(SHORT_PATTERN);
+	var bundleMatch = plist.match(BUNDLE_PATTERN);
+
+	if (!versionMatch) throw new Error('could not find CFBundleShortVersionString plist entry');
+	if (!bundleMatch) throw new Error('could not find CFBundleVersion plist entry');
+
+	return versionMatch[2].split(/\./).concat(bundleMatch[2]);
 }
 
 function replaceVersion (plist, options) {
 	var parts = parseVersion(plist);
 	var newVersionParts = bumpParsedVersion(parts, options);
-	var shortVersion = toVersionString(parts);
+	var shortVersion = toVersionString(newVersionParts);
 
 	return plist
 		.replace(SHORT_PATTERN, '$1' + shortVersion + '$3')
@@ -85,7 +95,7 @@ function replaceVersion (plist, options) {
 }
 
 function toVersionString (parts) {
-	return parts.slice(0,3).join('.') + '-' + parts[3];
+	return parts.slice(0,3).join('.');
 }
 
 function bumpParsedVersion (parts, options) {
