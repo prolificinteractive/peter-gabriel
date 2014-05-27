@@ -42,7 +42,7 @@ describe('pgab bump', function () {
 	});
 
 	describe('--timestamp -t', function () {
-		it('should append the curren timestamp as the build meta', function (done) {
+		it('should append the current timestamp as the build meta', function (done) {
 			function roundTimestampToNearestMinute (timestamp) {
 				return Math.round(timestamp / 60000) * 60000;
 			}
