@@ -96,30 +96,30 @@ function getLongVersion (parts) {
 }
 
 function bumpParsedVersion (parts, options) {
+	//Default to 0's
+	for (var i = 0; i <= 3; i += 1) {
+		parts[i] = parseInt(parts[i] || 0);
+	}
+
 	if (options.major) {
-		parts[0] = +parts[0] + 1;
+		parts[0] += 1;
 		parts[1] = 0;
 		parts[2] = 0;
 	}
 
 	if (options.minor) {
-		parts[1] = +parts[1] + 1;
+		parts[1] += 1;
 		parts[2] = 0;
 	}
 
 	if (options.patch) {
-		parts[2] = (+parts[2] || 0) + 1;
+		parts[2] += 1;
 	}
 
 	if (options.build) {
-		parts[3] = (+parts[3] || 0) + 1;
+		parts[3] += 1;
 	} else if (options.timestamp) {
 		parts[3] = Date.now();
-	}
-
-	//Default to 0's
-	for (var i = 0; i <= 3; i += 1) {
-		parts[i] = parts[i] || 0;
 	}
 
 	return parts;
