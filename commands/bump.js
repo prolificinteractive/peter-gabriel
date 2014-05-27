@@ -117,6 +117,11 @@ function bumpParsedVersion (parts, options) {
 		parts[3] = Date.now();
 	}
 
+	//Default to 0's
+	for (var i = 0; i <= 3; i += 1) {
+		parts[i] = parts[i] || 0;
+	}
+
 	return parts;
 }
 
