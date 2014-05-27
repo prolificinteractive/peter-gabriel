@@ -1,7 +1,7 @@
 var fs = require('fs');
 var path = require('path');
-var LONG_PATTERN = /(\<key\>CFBundleVersion\<\/key\>[^\<]+\<string\>)([0-9.-]+)(\<\/string\>)/;
 var SHORT_PATTERN = /(\<key\>CFBundleShortVersionString\<\/key\>[^\<]+\<string\>)([0-9.-]+)(\<\/string\>)/;
+var BUNDLE_PATTERN = /(\<key\>CFBundleVersion\<\/key\>[^\<]+\<string\>)([0-9]+)(\<\/string\>)/;
 
 function bumpCommand (parser) {
 	var command = parser.command('bump');
@@ -46,15 +46,10 @@ function bumpCommand (parser) {
 				flag: true,
 				help: 'Replaces the contents of the .plist file instead of writing to stdout.'
 			},
-			'short': {
-				abbr: 's',
+			'version-only': {
+				abbr: 'v',
 				flag: true,
-				help: 'Returns just the short version string.'
-			},
-			'long': {
-				abbr: 'l',
-				flag: true,
-				help: 'Returns just the long version string.'
+				help: 'Returns just the version string.'
 			}
 		})
 
@@ -62,11 +57,8 @@ function bumpCommand (parser) {
 			var file = path.resolve(process.cwd(), options.path);
 			var plist = fs.readFileSync(file, 'utf8');
 
-			if (options.short) {
-				var newVersion = getShortVersion(bumpParsedVersion(parseVersion(plist), options));
-				console.log(newVersion);
-			} else if (options.long) {
-				var newVersion = getLongVersion(bumpParsedVersion(parseVersion(plist), options));
+			if (options['version-only']) {
+				var newVersion = toVersionString(bumpParsedVersion(parseVersion(plist), options));
 				console.log(newVersion);
 			} else if (options.replace) {
 				fs.writeFileSync(file, replaceVersion(plist, options));
@@ -76,22 +68,23 @@ function bumpCommand (parser) {
 		});
 };
 
+function parseVersion (plist) {
+	var match = plist.match(SHORT_PATTERN);
+	if (!match) throw new Error('could not find CFBundleVersion plist entry');
+	return match[2].split(/[.-]/);
+}
+
 function replaceVersion (plist, options) {
 	var parts = parseVersion(plist);
 	var newVersionParts = bumpParsedVersion(parts, options);
-	var longVersion = getLongVersion(parts);
-	var shortVersion = getShortVersion(parts);
+	var shortVersion = toVersionString(parts);
 
 	return plist
 		.replace(SHORT_PATTERN, '$1' + shortVersion + '$3')
-		.replace(LONG_PATTERN, '$1' + longVersion + '$3');
+		.replace(BUNDLE_PATTERN, '$1' + newVersionParts[3] + '$3');
 }
 
-function getShortVersion (parts) {
-	return parts.slice(0, 2).join('.');
-} 
-
-function getLongVersion (parts) {
+function toVersionString (parts) {
 	return parts.slice(0,3).join('.') + '-' + parts[3];
 }
 
@@ -125,16 +118,9 @@ function bumpParsedVersion (parts, options) {
 	return parts;
 }
 
-function parseVersion (plist) {
-	var match = plist.match(LONG_PATTERN);
-	if (!match) throw new Error('could not find CFBundleVersion plist entry');
-	return match[2].split(/[.-]/);
-}
-
 bumpCommand.parseVersion = parseVersion;
 bumpCommand.replaceVersion = replaceVersion;
 bumpCommand.bumpParsedVersion = bumpParsedVersion;
-bumpCommand.getLongVersion = getLongVersion;
-bumpCommand.getShortVersion = getShortVersion;
+bumpCommand.toVersionString = toVersionString;
 
 module.exports = bumpCommand;
