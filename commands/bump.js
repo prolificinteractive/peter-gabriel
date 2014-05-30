@@ -53,6 +53,11 @@ function bumpCommand (parser) {
 			'build-only': {
 				flag: true,
 				help: 'Returns just the build number.'
+			},
+			'long-version': {
+				abbr: 'l',
+				flag: true,
+				help: 'Returns a combination of version string and build number'
 			}
 		})
 
@@ -60,7 +65,11 @@ function bumpCommand (parser) {
 			var file = path.resolve(process.cwd(), options.path);
 			var plist = fs.readFileSync(file, 'utf8');
 
-			if (options['version-only']) {
+			if (options['long-version']) {
+				var bumpedVersion = bumpParsedVersion(parseVersion(plist), options);
+				var newVersion = toVersionString(bumpedVersion) + '-' + bumpedVersion[3];
+				process.stdout.write(newVersion);
+			} else if (options['version-only']) {
 				var newVersion = toVersionString(bumpParsedVersion(parseVersion(plist), options));
 				process.stdout.write(newVersion);
 			} else if (options['build-only']) {
